@@ -37,7 +37,7 @@ namespace output{
 class Node_class;
 typedef std::shared_ptr<Node_class> Node;
 
-enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, RET_TYPE};
+enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, TOKEN, RET_TYPE};
 
 struct symTableEntry{
     std::string name;
@@ -65,7 +65,7 @@ public:
 class DataToken : public Data{
 public:
     std::string value;
-    DataToken(std::string token_value){
+    DataToken(std::string token_value): Data(Type::TOKEN){
         value = token_value;
     }
     ~DataToken();
@@ -153,12 +153,20 @@ public:
         else if (type == Type::STRING){
             attributes = std::make_shared<DataStr>(type);
         }
+        else if (type == Type::TOKEN){
+            attributes = std::make_shared<DataToken>(type);
+        }
         //attributes.type = type;
     }
-    Node_class(Type type, Type retType){
+    Node_class(Type type, std::string name){
         initNodes();
-        attributes.type = type;
-        attributes.retType = retType;
+        if (type == Type::TOKEN){
+            attributes = std::make_shared<DataToken>(name);
+        }
+        else{
+            printf("How did I get here?");exit(1);
+        }
+        
     }
     Node_class(Type type, std::string name, std::string value){
         initNodes();
