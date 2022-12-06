@@ -37,7 +37,7 @@ namespace output{
 class Node_class;
 typedef std::shared_ptr<Node_class> Node;
 
-enum Type {INVALID=0, INT, BOOL, FUNC, RET_TYPE};
+enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, RET_TYPE};
 
 struct symTableEntry{
     std::string name;
@@ -51,22 +51,89 @@ typedef std::stack<long> offset_frame;
 
 class Data{
 public:
-    Data(){
-        type = Type::INVALID;
+    const Type type;
+    bool lVAL;
+
+    Data(Type data_type) : type(data_type){
         lVAL = false;
-        name = "";
-        value = "";
     }
     ~Data();
-
     Data(Data&) = delete;
 
-    Type type;
-    bool lVAL;
-    std::string name;
-    std::string value;
-    Type retType;
     
+};
+class DataToken : public Data{
+public:
+    std::string value;
+    DataToken(std::string token_value){
+        value = token_value;
+    }
+    ~DataToken();
+    DataToken(DataToken&)=delete;
+
+};
+class DataNum : public Data{
+public:
+    int value;
+    DataNum(Type num_type) : Data(num_type){
+        value = 0;
+    }   
+    DataNum(Type num_type, int num_value): Data(num_type){
+        value = num_value;
+    }
+    ~DataNum();
+    DataNum(DataNum&)=delete;
+
+};
+class DataBool : public Data{
+public:
+    bool value;
+
+    DataBool(): Data(Type::BOOL){
+        value = false;
+    }
+    ~DataBool();
+    DataBool(DataBool&)=delete;
+};
+class DataStr : public Data{
+public:
+    std::string value;
+
+    DataStr(std::string str_value): Data(Type::STRING){
+        value = str_value;
+    }
+    ~DataStr();
+    DataStr(DataStr&)=delete;
+};
+
+
+class DataID : public DataNum{
+public:
+    DataID(std::string id_name){
+        name = id_name;
+        value = "";
+    }
+    ~DataID();
+    DataID(DataID&)=delete;
+
+    // id
+    std::string name;
+    //std::string value;
+
+};
+
+class DataFunc : public Data{
+public:
+    std::string name;
+    Type retType;
+
+    DataFunc(Type ret_type): Data(ret_type){
+        name = "";
+    }
+    ~DataFunc();
+    DataFunc(DataFunc&)=delete;
+
+
 };
 
 class Node_class{
@@ -74,7 +141,19 @@ public:
 
     Node_class(Type type){
         initNodes();
-        attributes.type = type;
+        if (type == Type::INT){
+            attributes = std::make_shared<DataNum>(type);
+        }
+        else if (type == Type::BYTE){
+            attributes = std::make_shared<DataNum>(type);
+        }
+        else if (type == Type::BOOL){
+            attributes = std::make_shared<DataBool>(type);
+        }
+        else if (type == Type::STRING){
+            attributes = std::make_shared<DataStr>(type);
+        }
+        //attributes.type = type;
     }
     Node_class(Type type, Type retType){
         initNodes();
@@ -96,6 +175,9 @@ public:
 
     Node parent;
     Node children[MAX_CHILDREN];
+    std::shared_ptr<Data> attributes;
+    
+    
     void initNodes(){
         parent.reset();
         for (int index = 0; index < MAX_CHILDREN; index++){
@@ -103,7 +185,7 @@ public:
         }   
     }
     
-    Data attributes;
+    
 
 };
 
