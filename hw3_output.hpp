@@ -35,7 +35,11 @@ namespace output{
 }
 
 class Node_class;
+class Data;
+
 typedef std::shared_ptr<Node_class> Node;
+typedef std::vector<Node>   NodeVector;
+typedef std::shared_ptr<Data> DataP;
 
 enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, TOKEN, RET_TYPE};
 
@@ -62,11 +66,32 @@ public:
 
     
 };
+
+class DataID : public Data{
+public:
+    std::string name;
+    symTableEntry* id_entry;
+    
+    DataID(Type data_type, std::string name): Data(data_type){
+        this->name = name;
+        /// TODO: fill id_entry
+    }
+    ~DataID();
+    DataID(DataID&) = delete;
+};
+
+class DataType : public Data{
+public:
+    DataType(Type d_type): Data(d_type){}
+    ~DataType();
+    DataType(DataType&)=delete;
+};
 class DataToken : public Data{
 public:
     std::string value;
     DataToken(std::string token_value): Data(Type::TOKEN){
         value = token_value;
+        switch(type){}
     }
     ~DataToken();
     DataToken(DataToken&)=delete;
@@ -89,8 +114,8 @@ class DataBool : public Data{
 public:
     bool value;
 
-    DataBool(): Data(Type::BOOL){
-        value = false;
+    DataBool(bool val): Data(Type::BOOL){
+        value = val;
     }
     ~DataBool();
     DataBool(DataBool&)=delete;
@@ -105,7 +130,6 @@ public:
     ~DataStr();
     DataStr(DataStr&)=delete;
 };
-
 
 class DataID : public DataNum{
 public:
@@ -136,11 +160,33 @@ public:
 
 };
 
+
+std::vector<Node> TreeNodes;
+Node createNode(){
+    int index = TreeNodes.size();
+    TreeNodes.push_back(std::make_shared<Node_class>(index));
+    return TreeNodes.back();
+}
+
 class Node_class{
 public:
+    Node parent;
+    //Node children[MAX_CHILDREN];
+    NodeVector children;
+    DataP attributes;
+    int node_index;
 
+/////////// Methods ///////////
+
+    Node_class(){
+        //initNodes();
+    }
+    Node_class(int node_idx){
+        //initNodes();
+        node_index = node_idx;
+    }
     Node_class(Type type){
-        initNodes();
+        //initNodes();
         if (type == Type::INT){
             attributes = std::make_shared<DataNum>(type);
         }
@@ -148,7 +194,7 @@ public:
             attributes = std::make_shared<DataNum>(type);
         }
         else if (type == Type::BOOL){
-            attributes = std::make_shared<DataBool>(type);
+            attributes = std::make_shared<DataBool>();
         }
         else if (type == Type::STRING){
             attributes = std::make_shared<DataStr>(type);
@@ -159,47 +205,54 @@ public:
         //attributes.type = type;
     }
     Node_class(Type type, std::string name){
-        initNodes();
+        //initNodes();
         if (type == Type::TOKEN){
             attributes = std::make_shared<DataToken>(name);
         }
         else{
-            printf("How did I get here?");exit(1);
+            exit(1);
         }
         
     }
     Node_class(Type type, std::string name, std::string value){
-        initNodes();
+        //initNodes();
         attributes.type = type;
         attributes.name = name;
         attributes.value = value;
     }
 
     ~Node_class();
-    
     Node_class(Node_class&) = delete;
 
-    void create_int_attributes();
-
-    Node parent;
-    Node children[MAX_CHILDREN];
-    std::shared_ptr<Data> attributes;
-    
-    
+    void create_bool_attributes(bool value){
+        attributes = std::make_shared<DataBool>(value);
+    }
+    void setAttributes(Data attr);
     void initNodes(){
         parent.reset();
         for (int index = 0; index < MAX_CHILDREN; index++){
             children[index].reset();
         }   
     }
-    
-    
+    void setChildren(NodeVector vector){
+        for (int index = 0; index < vector.size(); index++){
+            children.push_back(vector[index]);
+            children[index]->setParent(get());
+        }
+    }
+    void setParent(Node parent){
+        this->parent = parent;
+    }
+    Node get(){
+        return TreeNodes[node_index];
+    }
 
 };
 
 
 
-#define YYSTYPE Node_class*
+
+#define YYSTYPE Node
 
 
 #endif

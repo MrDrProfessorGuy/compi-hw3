@@ -2,6 +2,7 @@
 
 /* Declarations section */
 #include "hw3_output.hpp"
+#include <cstdlib>
 
 #define YYDEBUG 1 
 
@@ -10,7 +11,8 @@ extern int yylineno;
 extern int yylex(); 
 int yyerror(const char * message);
 
-
+#define NewNode(attr, children) $$ = createNode(); $$->setAttributes(attr); $$->setChildren(children);
+#define Cast(obj, Type) (std::static_pointer_cast<TYPE>(obj))
 
 %}
 
@@ -58,13 +60,13 @@ int yyerror(const char * message);
     Funcs: /*epsilon*/                                                          {output::printProductionRule(2);}; 
     Funcs: FuncDecl Funcs                                                       {output::printProductionRule(3);};
     FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE         {output::printProductionRule(4);};
-    RetType: Type                                                               {output::printProductionRule(5);};
-    RetType:  VOID                                                              {output::printProductionRule(6);};
+    RetType: Type                                                               {NewNode(std::make_shared<DataType>($1->type), NodeVector{$1});output::printProductionRule(5);};
+    RetType:  VOID                                                              {NewNode(std::make_shared<DataType>(Type::VOID), NodeVector{$1});output::printProductionRule(6);};
     Formals: /*epsilon*/                                                        {output::printProductionRule(7);};
     Formals: FormalsList                                                        {output::printProductionRule(8);};
     FormalsList: FormalDecl                                                     {output::printProductionRule(9);};
     FormalsList: FormalDecl COMMA FormalsList                                   {output::printProductionRule(10);};
-    FormalDecl: Type ID                                                         {output::printProductionRule(11);};
+    FormalDecl: Type ID                                                         {NewNode(std::make_shared<DataID>($1->type, Cast($2, DataToken)->value), NodeVector{$1, $2});output::printProductionRule(11);};
     Statements: Statement                                                       {output::printProductionRule(12);};
     Statements: Statements Statement                                            {output::printProductionRule(13);};
     Statement: LBRACE Statements RBRACE                                         {output::printProductionRule(14);};
@@ -83,20 +85,20 @@ int yyerror(const char * message);
     Call: ID LPAREN RPAREN                                                      {output::printProductionRule(27);};
     ExpList: Exp                                                                {output::printProductionRule(28);};
     ExpList: Exp COMMA ExpList                                                  {output::printProductionRule(29);};
-    Type: INT                                                                   {$$ = $1; output::printProductionRule(30);};
-    Type: BYTE                                                                  {output::printProductionRule(31);};
-    Type: BOOL                                                                  {output::printProductionRule(32);};
+    Type: INT                                                                   {NewNode(std::make_shared<DataType>(Type::INT), NodeVector{$1});output::printProductionRule(30);};
+    Type: BYTE                                                                  {NewNode(std::make_shared<DataType>(Type::BYTE), NodeVector{$1});output::printProductionRule(31);};
+    Type: BOOL                                                                  {NewNode(std::make_shared<DataType>(Type::BOOL), NodeVector{$1}); output::printProductionRule(32);};
     Exp: LPAREN Exp RPAREN                                                      {output::printProductionRule(33);};
     Exp: Exp IF LPAREN Exp RPAREN ELSE Exp                                      {output::printProductionRule(34);};
     Exp: Exp BINOP_ADD Exp                                                      {output::printProductionRule(35);};
     Exp: Exp BINOP_MUL Exp                                                      {output::printProductionRule(35);};
     Exp: ID                                                                     {output::printProductionRule(36);};
     Exp: Call                                                                   {output::printProductionRule(37);};
-    Exp: NUM                                                                    {output::printProductionRule(38);};
-    Exp: NUM B                                                                  {output::printProductionRule(39);};
-    Exp: STRING                                                                 {output::printProductionRule(40);};
-    Exp: TRUE                                                                   {output::printProductionRule(41);};
-    Exp: FALSE                                                                  {output::printProductionRule(42);};
+    Exp: NUM                                                                    {NewNode(std::make_shared<DataNum>(Type::INT, std::atoi(Cast($1, DataToken)->value)), NodeVector{$1});output::printProductionRule(38);};
+    Exp: NUM B                                                                  {NewNode(std::make_shared<DataNum>(Type::BYTE, std::atoi(Cast($1, DataToken)->value)), NodeVector{$1});output::printProductionRule(39);};
+    Exp: STRING                                                                 {NewNode(std::make_shared<DataStr>(Cast($1, DataToken)->value), NodeVector{$1});output::printProductionRule(40);};
+    Exp: TRUE                                                                   {NewNode(std::make_shared<DataBool>(true), NodeVector{$1});output::printProductionRule(41);};
+    Exp: FALSE                                                                  {NewNode(std::make_shared<DataBool>(false), NodeVector{$1});output::printProductionRule(42);};
     Exp: NOT Exp                                                                {output::printProductionRule(43);};
     Exp: Exp AND Exp                                                            {output::printProductionRule(44);};
     Exp: Exp OR Exp                                                             {output::printProductionRule(45);};
