@@ -5,7 +5,9 @@
 #include <string>
 #include <memory>
 #include <map>
-#include <stack>
+//#include <stack>
+
+
 using namespace std;
 
 #define MAX_CHILDREN 8
@@ -42,21 +44,91 @@ typedef std::vector<Node>   NodeVector;
 typedef std::shared_ptr<Data> DataP;
 
 enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, TOKEN, RET_TYPE};
+enum FrameType {FUNC, LOOP, BLOCK};
 
-struct symTableEntry{
+class symTableEntry{
+public:
     std::string name;
     Type type;
     long offset;
+    bool valid;
+
+    symTableEntry(std::string entry_name, Type entry_type, long entry_offset, bool entry_valid=true){
+        name = entry_name;
+        type = entry_type;
+        offset = entry_offset;
+        valid = entry_valid;
+    }
+    ~symTableEntry();
+    symTableEntry(symTableEntry& entry);
 };
 
 typedef std::map<std::string, symTableEntry> dict;
-typedef std::stack<dict> frame;
-typedef std::stack<long> offset_frame;
+
+
+class StackEntry{
+public:
+    long next_offset;
+    FrameType frame_type;
+    dict entries;
+
+    StackEntry();
+    ~StackEntry();
+    StackEntry(StackEntry&) = delete;
+
+    void newEntry(std::string name, Type entry_type){
+        symTableEntry entry(name, entry_type, next_offset);
+        next_offset++;
+
+        entries.insert({name, entry});
+    }
+    symTableEntry find(std::string name){
+        auto search = entries.find(name);
+        if (search == entries.end()){
+            return symTableEntry("", Type::INVALID, 0, false);
+        }
+        return search->second;
+    }
+
+};
+
+typedef std::vector<StackEntry> frame;
+
+class Frame_class{
+public:
+    frame frames;
+    
+    Frame_class();
+    ~Frame_class();
+    Frame_class(Frame_class&);
+    
+    void newEntry(std::string name, Type entry_type){
+        symTableEntry entry = find(name);
+        if (entry.valid){
+            ///TODO: ERROR
+            return;
+        }
+
+        frames.back().newEntry(name, entry_type);
+    }
+    symTableEntry find(std::string& name){
+        for(auto iter = frames.rbegin(); iter != frames.rend(); ++iter){
+            symTableEntry entry = iter->find(name);
+            if (entry.valid){
+                ///TODO: ERROR
+                return entry;
+            }
+        }
+    }
+
+};
 
 class Data{
 public:
     const Type type;
     bool lVAL;
+    long lineno;
+
 
     Data(Type data_type) : type(data_type){
         lVAL = false;
@@ -89,6 +161,7 @@ public:
 class DataToken : public Data{
 public:
     std::string value;
+    
     DataToken(std::string token_value): Data(Type::TOKEN){
         value = token_value;
         switch(type){}
@@ -227,7 +300,7 @@ public:
     void create_bool_attributes(bool value){
         attributes = std::make_shared<DataBool>(value);
     }
-    void setAttributes(Data attr);
+    void setAttributes(DataP attr);
     void initNodes(){
         parent.reset();
         for (int index = 0; index < MAX_CHILDREN; index++){
@@ -245,6 +318,92 @@ public:
     }
     Node get(){
         return TreeNodes[node_index];
+    }
+    
+    static void type_check(Node node, std::vector<Type> type){
+        for (int index = 0; index < type.size(); index++){
+            if (node->attributes->type == type[index]){
+                return;
+            }
+        }
+        output::errorMismatch(node->attributes->lineno);
+    }
+
+    void updateAttrRelop(){
+        type_check(children[0], {Type::INT, Type::BYTE});
+        type_check(children[2], {Type::INT, Type::BYTE});
+        bool val = false;
+        std::string relop = std::static_pointer_cast<DataToken>(children[1]->attributes)->value;
+    
+        long val1 = std::static_pointer_cast<DataNum>(children[0]->attributes)->value;
+        long val2 = std::static_pointer_cast<DataNum>(children[3]->attributes)->value;
+
+        if (relop.compare("<")){
+            val = val1 < val2;
+        }
+        else if (relop.compare("<=")){
+            val = val1 <= val2;
+        }
+        else if (relop.compare(">")){
+            val = val1 > val2;
+        }
+        else if (relop.compare(">=")){
+            val = val1 >= val2;
+        }
+        else if (relop.compare("==")){
+            val = val1 == val2;
+        }
+        else if (relop.compare("!=")){
+            val = val1 != val2;
+        }
+
+        setAttributes(std::allocate_shared<DataBool>(val));   
+    }
+
+    void updateAttrBinop(){
+        type_check(children[0], {Type::INT, Type::BYTE});
+        type_check(children[2], {Type::INT, Type::BYTE});
+        
+        long val = false;
+        std::string binop = std::static_pointer_cast<DataToken>(children[1]->attributes)->value;
+    
+        long val1 = std::static_pointer_cast<DataNum>(children[0]->attributes)->value;
+        long val2 = std::static_pointer_cast<DataNum>(children[3]->attributes)->value;
+
+        if (binop.compare("*")){
+            val = val1 * val2;
+        }
+        else if (binop.compare("/")){
+            val = val1 / val2;
+        }
+        else if (binop.compare("+")){
+            val = val1 + val2;
+        }
+        else if (binop.compare("-")){
+            val = val1 - val2;
+        }
+        if (children[0]->attributes->type == Type::INT || children[2]->attributes->type == Type::INT){
+                    setAttributes(std::allocate_shared<DataNum>(Type::INT, val));
+        }
+        else{
+            setAttributes(std::allocate_shared<DataNum>(Type::BYTE, val));
+        }
+        
+    }
+
+    void updateAttrCast(){
+        type_check(children[1], {Type::INT, Type::BYTE});
+        type_check(children[3], {Type::INT, Type::BYTE});
+        
+        long val = std::static_pointer_cast<DataNum>(children[3]->attributes)->value;
+
+        if (children[1]->attributes->type == Type::INT){
+            setAttributes(std::allocate_shared<DataNum>(Type::INT, (int)val));
+        }
+        else if (children[1]->attributes->type == Type::BYTE){
+            setAttributes(std::allocate_shared<DataNum>(Type::BYTE, (byte)val));
+        }
+
     }
 
 };
