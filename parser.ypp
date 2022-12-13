@@ -14,8 +14,6 @@ int yyerror(const char * message);
 #define NewNode(attr, children) $$ = createNode(); $$->setAttributes(attr); $$->setChildren(children);
 #define Cast(obj, Type) (std::static_pointer_cast<TYPE>(obj))
 
-
-
 void type_check(Node node, Type type){
     if(node->attributes->type != type){
         errorMismatch(node->attributes->lineno);

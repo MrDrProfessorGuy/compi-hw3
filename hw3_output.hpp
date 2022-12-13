@@ -127,8 +127,6 @@ class Data{
 public:
     const Type type;
     bool lVAL;
-    long lineno;
-
 
     Data(Type data_type) : type(data_type){
         lVAL = false;
@@ -254,46 +252,6 @@ public:
     Node_class(){
         //initNodes();
     }
-    Node_class(int node_idx){
-        //initNodes();
-        node_index = node_idx;
-    }
-    Node_class(Type type){
-        //initNodes();
-        if (type == Type::INT){
-            attributes = std::make_shared<DataNum>(type);
-        }
-        else if (type == Type::BYTE){
-            attributes = std::make_shared<DataNum>(type);
-        }
-        else if (type == Type::BOOL){
-            attributes = std::make_shared<DataBool>();
-        }
-        else if (type == Type::STRING){
-            attributes = std::make_shared<DataStr>(type);
-        }
-        else if (type == Type::TOKEN){
-            attributes = std::make_shared<DataToken>(type);
-        }
-        //attributes.type = type;
-    }
-    Node_class(Type type, std::string name){
-        //initNodes();
-        if (type == Type::TOKEN){
-            attributes = std::make_shared<DataToken>(name);
-        }
-        else{
-            exit(1);
-        }
-        
-    }
-    Node_class(Type type, std::string name, std::string value){
-        //initNodes();
-        attributes.type = type;
-        attributes.name = name;
-        attributes.value = value;
-    }
-
     ~Node_class();
     Node_class(Node_class&) = delete;
 
