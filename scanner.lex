@@ -81,37 +81,37 @@ token_string    (\"([^\n\r\"\\]|\\[rnt"\\])+\")
 
 %%
 
-{token_void}      return new Node_class(Type::TOKEN, std::string(yytext));
-{token_int}       return new Node_class(Type::TOKEN, std::string(yytext));
-{token_byte}      return new Node_class(Type::TOKEN, std::string(yytext));
-{token_b}         return new Node_class(Type::TOKEN, std::string(yytext));
-{token_bool}      return new Node_class(Type::TOKEN, std::string(yytext));
-{token_and}       return new Node_class(Type::TOKEN, std::string(yytext));
-{token_or}        return new Node_class(Type::TOKEN, std::string(yytext));
-{token_not}       return new Node_class(Type::TOKEN, std::string(yytext));
-{token_true}      return new Node_class(Type::TOKEN, std::string(yytext));
-{token_false}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_return}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_if}        return new Node_class(Type::TOKEN, std::string(yytext));
-{token_else}      return new Node_class(Type::TOKEN, std::string(yytext));
-{token_while}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_break}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_continue}  return new Node_class(Type::TOKEN, std::string(yytext));
-{token_sc}        return new Node_class(Type::TOKEN, std::string(yytext));
-{token_comma}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_lparen}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_rparen}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_lbrace}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_rbrace}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_assign}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_relop}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_equeality}    return new Node_class(Type::TOKEN, std::string(yytext));
-{token_binop_add}     return new Node_class(Type::TOKEN, std::string(yytext));
-{token_binop_mul}     return new Node_class(Type::TOKEN, std::string(yytext));
+{token_void}      return new Node_Token(std::string(yytext));
+{token_int}       return new Node_Token(std::string(yytext));
+{token_byte}      return new Node_Token(std::string(yytext));
+{token_b}         return new Node_Token(std::string(yytext));
+{token_bool}      return new Node_Token(std::string(yytext));
+{token_and}       return new Node_Token(std::string(yytext));
+{token_or}        return new Node_Token(std::string(yytext));
+{token_not}       return new Node_Token(std::string(yytext));
+{token_true}      return new Node_Token(std::string(yytext));
+{token_false}     return new Node_Token(std::string(yytext));
+{token_return}    return new Node_Token(std::string(yytext));
+{token_if}        return new Node_Token(std::string(yytext));
+{token_else}      return new Node_Token(std::string(yytext));
+{token_while}     return new Node_Token(std::string(yytext));
+{token_break}     return new Node_Token(std::string(yytext));
+{token_continue}  return new Node_Token(std::string(yytext));
+{token_sc}        return new Node_Token(std::string(yytext));
+{token_comma}     return new Node_Token(std::string(yytext));
+{token_lparen}    return new Node_Token(std::string(yytext));
+{token_rparen}    return new Node_Token(std::string(yytext));
+{token_lbrace}    return new Node_Token(std::string(yytext));
+{token_rbrace}    return new Node_Token(std::string(yytext));
+{token_assign}    return new Node_Token(std::string(yytext));
+{token_relop}     return new Node_Token(std::string(yytext));
+{token_equeality}    return new Node_Token(std::string(yytext));
+{token_binop_add}     return new Node_Token(std::string(yytext));
+{token_binop_mul}     return new Node_Token(std::string(yytext));
 
-{token_id}        return new Node_class(Type::TOKEN, std::string(yytext));
-{token_num}       return new Node_class(Type::TOKEN, std::string(yytext));
-{token_string}    return new Node_class(Type::TOKEN, std::string(yytext));
+{token_id}        return new Node_Token(std::string(yytext));
+{token_num}       return new Node_Token(std::string(yytext));
+{token_string}    return new Node_Token(std::string(yytext));
 
 {token_comment}              ;
 {whitespace}                 ;

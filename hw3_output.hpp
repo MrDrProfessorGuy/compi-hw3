@@ -7,10 +7,8 @@
 #include <map>
 //#include <stack>
 
-
-using namespace std;
-
-#define MAX_CHILDREN 8
+//using namespace std;
+extern int yylineno; 
 
 
 namespace output{
@@ -36,12 +34,72 @@ namespace output{
 
 }
 
-class Node_class;
-class Data;
+class AppaException : public std::exception{
+public:
+    long lineno;
+    AppaException(long lineno);
+    ~AppaException();
+};
 
-typedef std::shared_ptr<Node_class> Node;
+class Lexception : public AppaException{
+    Lexception(long lineno);
+    ~Lexception();
+};
+
+class SynExc : public AppaException{
+    SynExc(long lineno);
+    ~SynExc();
+};
+class UndefExc : public AppaException{
+    UndefExc(long lineno);
+    ~UndefExc();
+};
+class DefExc : public AppaException{
+    DefExc(long lineno);
+    ~DefExc();
+};
+class UndDefFuncExc : public AppaException{
+    UndDefFuncExc(long lineno);
+    ~UndDefFuncExc();
+};
+class MismatchExc : public AppaException{
+    MismatchExc(long lineno);
+    ~MismatchExc();
+};
+class PrototypeMismatchExc : public AppaException{
+    PrototypeMismatchExc(long lineno);
+    ~PrototypeMismatchExc();
+};
+class UnexpectedBreakExc : public AppaException{
+    UnexpectedBreakExc(long lineno);
+    ~UnexpectedBreakExc();
+};
+class UnexpectedContinueExc : public AppaException{
+    UnexpectedContinueExc(long lineno);
+    ~UnexpectedContinueExc();
+};
+class MainMissingExc : public AppaException{
+    MainMissingExc(long lineno);
+    ~MainMissingExc();
+};
+class ByteTooLargeExc : public AppaException{
+    ByteTooLargeExc(long lineno) : AppaException(lineno){};
+    ~ByteTooLargeExc();
+};
+
+class Node_class;
+class Generic_Node;
+class Data;
+class symTableEntry;
+class StackEntry;
+class Frame_class;
+
+typedef std::shared_ptr<Generic_Node> Node;
 typedef std::vector<Node>   NodeVector;
 typedef std::shared_ptr<Data> DataP;
+typedef std::map<std::string, symTableEntry> dict;
+typedef std::vector<StackEntry> frame;
+
 
 enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, TOKEN, RET_TYPE};
 enum FrameType {FUNC, LOOP, BLOCK};
@@ -62,9 +120,6 @@ public:
     ~symTableEntry();
     symTableEntry(symTableEntry& entry);
 };
-
-typedef std::map<std::string, symTableEntry> dict;
-
 
 class StackEntry{
 public:
@@ -91,8 +146,6 @@ public:
     }
 
 };
-
-typedef std::vector<StackEntry> frame;
 
 class Frame_class{
 public:
@@ -122,6 +175,7 @@ public:
     }
 
 };
+Frame_class frame_manager;
 
 class Data{
 public:
@@ -368,8 +422,175 @@ public:
 
 
 
+class Generic_Node{
+public:
+    Node parent;
+    NodeVector children;
 
-#define YYSTYPE Node
+/////////// Methods ///////////
+
+    Generic_Node(NodeVector children){
+        //initNodes();
+        setChildren(children);
+    }
+    ~Generic_Node();
+    Generic_Node(Generic_Node&) = delete;
+
+    void initNodes(){
+        parent.reset();
+        for (int index = 0; index < MAX_CHILDREN; index++){
+            children[index].reset();
+        }   
+    }
+    void setChildren(NodeVector vector){
+        for (int index = 0; index < vector.size(); index++){
+            children.push_back(vector[index]);
+            children[index]->setParent(get());
+        }
+    }
+    void setParent(Node parent){
+        this->parent = parent;
+    }
+    Node get(){
+        return TreeNodes[node_index];
+    }
+
+};
+
+class Node_RetType : public Generic_Node{
+public:
+    Type type;
+
+/////////// Methods ///////////
+
+    Node_RetType(NodeVector children, Type ret_type): Generic_Node(children){
+        type = ret_type;
+    }
+    ~Node_RetType();
+    Node_RetType(Node_Exp&) = delete;
+
+    void set_type();
+};
+
+class Node_FormalDecl : public Generic_Node{
+public:
+    Type param_type;
+/////////// Methods ///////////
+
+    Node_FormalDecl(NodeVector children, Type parameter_type): Generic_Node(children){
+        param_type = parameter_type;
+        //TODO: check validity in symtable.
+    }
+    ~Node_FormalDecl();
+    Node_FormalDecl(Node_FormalDecl&) = delete;
+};
+
+class Node_FormalsList : public Generic_Node{
+public:
+    std::vector<Node_FormalDecl> parameter_list;
+/////////// Methods ///////////
+
+    Node_FormalsList(NodeVector children): Generic_Node(children){
+        //TODO: check validity in symtable, unite lists.
+    }
+    ~Node_FormalsList();
+    Node_FormalsList(Node_FormalsList&) = delete;
+};
+
+class Node_FuncDecl : public Generic_Node{
+public:
+/////////// Methods ///////////
+
+    Node_FuncDecl(NodeVector children): Generic_Node(children){
+        //TODO: check validity in sym table
+    }
+    ~Node_FuncDecl();
+    Node_FuncDecl(Node_FuncDecl&) = delete;
+
+};
+
+class Node_Token : public Generic_Node{
+public:
+    std::string value;
+
+/////////// Methods ///////////
+
+    Node_Token(std::string token_value): Generic_Node({}){
+        value = token_value;
+    }
+    ~Node_Token();
+    Node_Token(Node_Token&) = delete;
+};
+
+class Node_Statement : public Generic_Node{
+public:
+
+/////////// Methods ///////////
+    Node_Statement(NodeVector children): Generic_Node(children){
+        
+    }
+    ~Node_Statement();
+    Node_Statement(Node_Statement&) = delete;
+
+
+};
+
+class Node_StatementList : public Generic_Node{
+public:
+    std::vector<Node_Statement> statement_list;
+/////////// Methods ///////////
+    Node_StatementList(NodeVector children): Generic_Node(children){
+        //TODO: unite lists
+    }
+    ~Node_StatementList();
+    Node_StatementList(Node_StatementList&) = delete;
+};
+
+class Node_Exp : public Generic_Node{
+public:
+    Type type;
+/////////// Methods ///////////
+    Node_Exp(NodeVector children, Type exp_type): Generic_Node(children){
+        type = exp_type;
+    }
+    ~Node_Exp();
+    Node_Exp(Node_Exp&) = delete;
+
+    void set_type(Type exp_type);
+    bool typeCheck(std::vector<Type> type_list);
+};
+
+class Node_ExpList : public Generic_Node{
+public:
+    std::vector<Node_Exp> exp_list;
+/////////// Methods ///////////
+
+    Node_ExpList(NodeVector children): Generic_Node(children){
+        //TODO: unite the lists
+    }
+    ~Node_ExpList();
+    Node_ExpList(Node_ExpList&) = delete;
+
+};
+
+class Node_Call : public Generic_Node{
+public:
+
+/////////// Methods ///////////
+
+    Node_Call(NodeVector children): Generic_Node(children){
+        //TODO: check validity in sym table
+    }
+    ~Node_Call();
+    Node_Call(Node_Call&) = delete;
+
+};
+
+
+//#define YYSTYPE Node
+union YYSTYPE {
+  double val;
+};
 
 
 #endif
