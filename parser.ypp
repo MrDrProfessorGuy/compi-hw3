@@ -21,43 +21,58 @@ void type_check(Node node, Type type){
 
 %}
 
-%token VOID
-%token INT
-%token BYTE
-%token B
-%token BOOL
+%type <> Program
+%type <Node_FuncsList> Funcs
+%type <Node_FuncDecl> FuncDecl
+%type <Node_RetType> RetType
+%type <Node_FormalsList> FormalsList
+%type <Node_FormalsList> Formals
+%type <Node_FormalDecl> FormalDecl
+%type <Node_StatementList> Statements
+%type <Node_Statement> Statement
+%type <Node_Exp> Type
+%type <Node_Call> Call
+%type <Node_ExpList> ExpList
+%type <Node_Exp> Exp
+
+
+%token <Node_Token> VOID
+%token <Node_Token> INT
+%token <Node_Token> BYTE
+%token <Node_Token> B
+%token <Node_Token> BOOL
 
 
 
-%token TRUE
-%token FALSE
-%token RETURN
-%token IF
+%token <Node_Token> TRUE
+%token <Node_Token> FALSE
+%token <Node_Token> RETURN
+%token <Node_Token> IF
 
-%token WHILE
-%token BREAK
-%token CONTINUE
-%token SC
-%token COMMA
-%token LPAREN
+%token <Node_Token> WHILE
+%token <Node_Token> BREAK
+%token <Node_Token> CONTINUE
+%token <Node_Token> SC
+%token <Node_Token> COMMA
+%token <Node_Token> LPAREN
 
-%token LBRACE
-%token RBRACE
+%token <Node_Token> LBRACE
+%token <Node_Token> RBRACE
 
-%token ID
-%token NUM
-%token STRING
+%token <Node_Token> ID
+%token <Node_Token> NUM
+%token <Node_Token> STRING
 
-%left OR
-%left AND
-%right ASSIGN
-%left EQUALITY
-%left RELOP
-%left BINOP_ADD
-%left BINOP_MUL
-%left NOT
-%left RPAREN
-%nonassoc ELSE
+%left <Node_Token> OR
+%left <Node_Token> AND
+%right <Node_Token> ASSIGN
+%left <Node_Token> EQUALITY
+%left <Node_Token> RELOP
+%left <Node_Token> BINOP_ADD
+%left <Node_Token> BINOP_MUL
+%left <Node_Token> NOT
+%left <Node_Token> RPAREN
+%nonassoc <Node_Token> ELSE
 
 
 %%

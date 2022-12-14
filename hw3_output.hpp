@@ -13,78 +13,73 @@ extern int yylineno;
 
 namespace output{
     void endScope();
-    void printID(const string& id, int offset, const string& type);
+    void printID(const std::string& id, int offset, const std::string& type);
 
     /* Do not save the string returned from this function in a data structure
         as it is not dynamically allocated and will be destroyed(!) at the end of the calling scope.
     */
-    string makeFunctionType(const string& retType, vector<string>& argTypes);
+    std::string makeFunctionType(const std::string& retType, std::vector<std::string>& argTypes);
 
     void errorLex(int lineno);
     void errorSyn(int lineno);
-    void errorUndef(int lineno, const string& id);
-    void errorDef(int lineno, const string& id);
-    void errorUndefFunc(int lineno, const string& id);
+    void errorUndef(int lineno, const std::string& id);
+    void errorDef(int lineno, const std::string& id);
+    void errorUndefFunc(int lineno, const std::string& id);
     void errorMismatch(int lineno);
-    void errorPrototypeMismatch(int lineno, const string& id, vector<string>& argTypes);
+    void errorPrototypeMismatch(int lineno, const std::string& id, std::vector<std::string>& argTypes);
     void errorUnexpectedBreak(int lineno);
     void errorUnexpectedContinue(int lineno);
     void errorMainMissing();
-    void errorByteTooLarge(int lineno, const string& value);
+    void errorByteTooLarge(int lineno, const std::string& value);
 
 }
 
 class AppaException : public std::exception{
 public:
     long lineno;
-    AppaException(long lineno);
-    ~AppaException();
+    AppaException(long line_number) : std::exception(){
+        lineno = line_number;
+    }
+    /*
+    const char* what() const noexcept override{
+            
+            return "A game related error has occurred: IllegalArgument";
+    }*/
 };
 
 class Lexception : public AppaException{
-    Lexception(long lineno);
-    ~Lexception();
+    Lexception(long lineno) : AppaException(lineno){};
 };
 
 class SynExc : public AppaException{
-    SynExc(long lineno);
-    ~SynExc();
+    SynExc(long lineno) : AppaException(lineno){};
 };
 class UndefExc : public AppaException{
-    UndefExc(long lineno);
-    ~UndefExc();
+    UndefExc(long lineno) : AppaException(lineno){};
 };
 class DefExc : public AppaException{
-    DefExc(long lineno);
-    ~DefExc();
+    DefExc(long lineno) : AppaException(lineno){};
 };
 class UndDefFuncExc : public AppaException{
-    UndDefFuncExc(long lineno);
-    ~UndDefFuncExc();
+    UndDefFuncExc(long lineno) : AppaException(lineno){};
 };
 class MismatchExc : public AppaException{
-    MismatchExc(long lineno);
-    ~MismatchExc();
+    MismatchExc(long lineno) : AppaException(lineno){};
 };
 class PrototypeMismatchExc : public AppaException{
-    PrototypeMismatchExc(long lineno);
-    ~PrototypeMismatchExc();
+    PrototypeMismatchExc(long lineno) : AppaException(lineno){};
 };
 class UnexpectedBreakExc : public AppaException{
-    UnexpectedBreakExc(long lineno);
-    ~UnexpectedBreakExc();
+    UnexpectedBreakExc(long lineno) : AppaException(lineno){};
 };
 class UnexpectedContinueExc : public AppaException{
-    UnexpectedContinueExc(long lineno);
-    ~UnexpectedContinueExc();
+    UnexpectedContinueExc(long lineno) : AppaException(lineno){};
 };
 class MainMissingExc : public AppaException{
-    MainMissingExc(long lineno);
-    ~MainMissingExc();
+    MainMissingExc(long lineno) : AppaException(lineno){};
 };
 class ByteTooLargeExc : public AppaException{
     ByteTooLargeExc(long lineno) : AppaException(lineno){};
-    ~ByteTooLargeExc();
 };
 
 class Node_class;
@@ -97,81 +92,121 @@ class Frame_class;
 typedef std::shared_ptr<Generic_Node> Node;
 typedef std::vector<Node>   NodeVector;
 typedef std::shared_ptr<Data> DataP;
-typedef std::map<std::string, symTableEntry> dict;
+typedef std::shared_ptr<symTableEntry> SymEntry;
+typedef std::map<std::string, SymEntry> dict;
 typedef std::vector<StackEntry> frame;
 
 
 enum Type {INVALID=0, INT, BYTE, BOOL, STRING, FUNC, TOKEN, RET_TYPE};
+enum DeclType {INVALID=0, VAR, FUNC};
 enum FrameType {FUNC, LOOP, BLOCK};
 
 class symTableEntry{
 public:
     std::string name;
-    Type type;
+    DeclType entry_type;
     long offset;
     bool valid;
 
-    symTableEntry(std::string entry_name, Type entry_type, long entry_offset, bool entry_valid=true){
+    symTableEntry(std::string entry_name, DeclType entry_type, long entry_offset, bool entry_valid=true){
         name = entry_name;
-        type = entry_type;
+        this->entry_type = entry_type;
         offset = entry_offset;
         valid = entry_valid;
     }
-    ~symTableEntry();
-    symTableEntry(symTableEntry& entry);
+    ~symTableEntry() = default;
+    symTableEntry(symTableEntry& entry) = default;
+};
+class symTableEntryFunc : public symTableEntry{
+public:
+    Type ret_type;
+    std::vector<Node_FormalDecl> parameter_list;
+
+    symTableEntryFunc(std::string entry_name, DeclType entry_type, long entry_offset, Type return_type, std::vector<Node_FormalDecl> func_params) : symTableEntry(entry_name, entry_type, entry_offset, true){
+        ret_type = return_type;
+        parameter_list = func_params;
+    }
+    ~symTableEntryFunc() = default;
+    symTableEntryFunc(symTableEntryFunc& entry) = default;
+};
+class symTableEntryID : public symTableEntry{
+public:
+    Type type;
+
+    symTableEntryID(std::string entry_name, DeclType entry_type, long entry_offset, Type id_type) : symTableEntry(entry_name, entry_type, entry_offset, true){
+        type = id_type;
+    }
+    ~symTableEntryID() = default;
+    symTableEntryID(symTableEntryID& entry) = default;
 };
 
 class StackEntry{
+    const SymEntry invalid_entry;
 public:
     long next_offset;
     FrameType frame_type;
     dict entries;
-
-    StackEntry();
-    ~StackEntry();
+    
+    StackEntry():invalid_entry(std::make_shared<symTableEntry>("", DeclType::INVALID, 0, false)){
+        
+    };
+    ~StackEntry()=default;
     StackEntry(StackEntry&) = delete;
 
-    void newEntry(std::string name, Type entry_type){
-        symTableEntry entry(name, entry_type, next_offset);
+    void newIdEntry(std::string name, Type id_type){
+        auto entry = std::allocate_shared<symTableEntryID>(name, DeclType::VAR, next_offset, id_type);
         next_offset++;
 
         entries.insert({name, entry});
     }
-    symTableEntry find(std::string name){
+    void newFuncEntry(std::string name, Type ret_type, std::vector<Node_FormalDecl> func_params){
+        auto entry = std::allocate_shared<symTableEntryFunc>(name, DeclType::FUNC, next_offset, ret_type, func_params);
+        next_offset++;
+
+        entries.insert({name, entry});
+    }
+    SymEntry find(std::string name){
         auto search = entries.find(name);
         if (search == entries.end()){
-            return symTableEntry("", Type::INVALID, 0, false);
+            return invalid_entry;
         }
         return search->second;
     }
-
+    SymEntry invalidEntry(){
+        return invalid_entry;
+    }
 };
 
 class Frame_class{
 public:
     frame frames;
     
-    Frame_class();
-    ~Frame_class();
-    Frame_class(Frame_class&);
+    Frame_class()=default;
+    ~Frame_class()=default;
+    Frame_class(Frame_class&)=delete;
     
-    void newEntry(std::string name, Type entry_type){
-        symTableEntry entry = find(name);
-        if (entry.valid){
-            ///TODO: ERROR
-            return;
+    void newEntry(DeclType entry_type, std::string name, Type id_type){
+        SymEntry entry = find(name);
+        if (entry->valid){
+            throw UndefExc(yylineno);
         }
-
-        frames.back().newEntry(name, entry_type);
+        frames.back().newIdEntry(name, id_type);
     }
-    symTableEntry find(std::string& name){
+    void newEntry(DeclType entry_type, std::string name, Type ret_type, std::vector<Node_FormalDecl> func_params){
+        SymEntry entry = find(name);
+        if (entry->valid){
+            throw UndDefFuncExc(yylineno);
+        }
+        frames.back().newFuncEntry(name, ret_type, func_params);
+    }
+    SymEntry find(std::string name){
         for(auto iter = frames.rbegin(); iter != frames.rend(); ++iter){
-            symTableEntry entry = iter->find(name);
-            if (entry.valid){
-                ///TODO: ERROR
+            SymEntry entry = iter->find(name);
+            if (entry->valid){
                 return entry;
             }
         }
+        return StackEntry().invalidEntry();
     }
 
 };
@@ -433,15 +468,9 @@ public:
         //initNodes();
         setChildren(children);
     }
-    ~Generic_Node();
+    ~Generic_Node() = default;
     Generic_Node(Generic_Node&) = delete;
 
-    void initNodes(){
-        parent.reset();
-        for (int index = 0; index < MAX_CHILDREN; index++){
-            children[index].reset();
-        }   
-    }
     void setChildren(NodeVector vector){
         for (int index = 0; index < vector.size(); index++){
             children.push_back(vector[index]);
@@ -466,10 +495,12 @@ public:
     Node_RetType(NodeVector children, Type ret_type): Generic_Node(children){
         type = ret_type;
     }
-    ~Node_RetType();
+    ~Node_RetType() = default;
     Node_RetType(Node_Exp&) = delete;
 
-    void set_type();
+    void set_type(Type new_type){
+        type = new_type;
+    };
 };
 
 class Node_FormalDecl : public Generic_Node{
@@ -506,6 +537,19 @@ public:
     }
     ~Node_FuncDecl();
     Node_FuncDecl(Node_FuncDecl&) = delete;
+
+};
+
+class Node_FuncsList : public Generic_Node{
+public:
+    std::vector<Node_FuncDecl> funcs_list;
+/////////// Methods ///////////
+
+    Node_FuncsList(NodeVector children): Generic_Node(children){
+        //TODO: check validity in sym table
+    }
+    ~Node_FuncsList();
+    Node_FuncsList(Node_FuncsList&) = delete;
 
 };
 
@@ -583,13 +627,13 @@ public:
     }
     ~Node_Call();
     Node_Call(Node_Call&) = delete;
-
+    std::string ID();
 };
 
 
 //#define YYSTYPE Node
 union YYSTYPE {
-  double val;
+  
 };
 
 

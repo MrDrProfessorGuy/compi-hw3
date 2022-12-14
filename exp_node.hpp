@@ -114,7 +114,7 @@ public:
 class Node_Exp_ID : public Node_Exp{
 public:
 
-    Node_Exp_ID(NodeVector children, Type exp_type): Node_Exp(children, exp_type){
+    Node_Exp_ID(NodeVector children): Node_Exp(children, Type::INVALID){
         //TODO: check validity and update frame stack 
         auto node_token_id = std::static_pointer_cast<Node_Token>(children[0]);
         symTableEntry entry = frame_manager.find(node_token_id->value);
@@ -132,10 +132,15 @@ public:
 class Node_Exp_Call : public Node_Exp{
 public:
 
-    Node_Exp_Call(NodeVector children, Type exp_type): Node_Exp(children, exp_type){
+    Node_Exp_Call(NodeVector children): Node_Exp(children, Type::INVALID){
         ///TODO: check validity and update frame stack 
+        auto node_call = std::dynamic_pointer_cast<Node_Call>(children[0]);
+        auto func_entry = std::dynamic_pointer_cast<symTableEntryFunc>(frame_manager.find(node_call->ID()));
+        assert(func_entry->valid);
+
+        set_type(func_entry->ret_type);
     }
-    ~Node_Exp_Call();
+    ~Node_Exp_Call()=default;
     Node_Exp_Call(Node_Exp_Call&) = delete;;
 
 };
